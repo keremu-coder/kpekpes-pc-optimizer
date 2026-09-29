@@ -103,12 +103,8 @@ function Invoke-VerifyChecks {
     Test-Reg 'Game DVR off' $gcs 'GameDVR_Enabled' 0
     Test-Reg 'Game Mode as configured' $gameBar 'AutoGameModeEnabled' $gm
 
-    # --- Xbox Game Bar removal verification ---
     $gbApp = Get-AppxPackage -AllUsers *Microsoft.XboxGamingOverlay* -ErrorAction SilentlyContinue
     Add-Result 'Xbox Game Bar app uninstalled' (-not $gbApp) 'check for Microsoft.XboxGamingOverlay'
-    $gbExe = "C:\Windows\System32\GameBarPresenceWriter.exe"
-    $gbBak = "C:\Windows\System32\GameBarPresenceWriter.exe.bak"
-    Add-Result 'GameBarPresenceWriter.exe disabled' ((Test-Path $gbBak) -or (-not (Test-Path $gbExe))) 'file renamed or removed'
     Test-Reg 'AllowGameDVR policy = 0' 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR' 'AllowGameDVR' 0
     Test-Reg 'Store auto-download blocked' 'HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore' 'AutoDownload' 2
 
@@ -371,11 +367,11 @@ if (-not $WhatIf) {
     }
 }
 
-# ==================== NEW: REMOVE XBOX GAME BAR COMPLETELY ====================
-Write-Step 'Removing Xbox Game Bar completely'
+# ==================== SAFE GAME BAR REMOVAL ====================
+Write-Step 'Removing Xbox Game Bar (safe method)'
 
 if (-not $WhatIf) {
-    # 1) Uninstall the AppX packages
+    # SAFE: Uninstall AppX packages only. No file tampering.
     $gbPackages = @(
         '*Microsoft.XboxGamingOverlay*',
         '*Microsoft.XboxGameCallableUI*',
@@ -396,27 +392,7 @@ if (-not $WhatIf) {
         } catch { }
     }
 
-    # 2) Rename GameBarPresenceWriter.exe so it can never run
-    $gbExe = "C:\Windows\System32\GameBarPresenceWriter.exe"
-    $gbBak = "C:\Windows\System32\GameBarPresenceWriter.exe.bak"
-    if (Test-Path $gbExe) {
-        try {
-            takeown /f $gbExe 2>&1 | Out-Null
-            icacls $gbExe /grant "*S-1-5-32-544:F" 2>&1 | Out-Null
-            Rename-Item -LiteralPath $gbExe -NewName "GameBarPresenceWriter.exe.bak" -Force -ErrorAction Stop
-            Add-Result 'GameBarPresenceWriter.exe disabled' $true ''
-        } catch {
-            Add-Result 'GameBarPresenceWriter.exe disabled' $false $_.Exception.Message
-        }
-    } else {
-        Add-Result 'GameBarPresenceWriter.exe disabled' $true 'already removed'
-    }
-
-    # 3) Remove the IFEO key if it exists (from old scripts)
-    $ifeo = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options'
-    Remove-Item -LiteralPath "$ifeo\GameBarPresenceWriter.exe" -Recurse -Force -ErrorAction SilentlyContinue
-
-    # 4) Remove Xbox/GameBar scheduled tasks
+    # SAFE: Remove the scheduled tasks
     try {
         Get-ScheduledTask -ErrorAction SilentlyContinue |
             Where-Object { $_.TaskName -match 'Xbox|GameBar' -or $_.TaskPath -match 'XblGameSave|XboxGame' } |
@@ -425,7 +401,7 @@ if (-not $WhatIf) {
             }
     } catch { }
 
-    # 5) Lock policies so Windows Update cannot reinstall it
+    # SAFE: Set the blocking policies
     Set-RegValue 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR' 'AllowGameDVR' 0
     Set-RegValue 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\GameDVR' 'AppCaptureEnabled' 0
     Set-RegValue 'HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore' 'AutoDownload' 2
@@ -433,9 +409,11 @@ if (-not $WhatIf) {
     Set-RegValue 'HKCU:\Software\Microsoft\GameBar' 'ShowStartupPanel' 0
     Set-RegValue 'HKCU:\Software\Microsoft\GameBar' 'UseNexusForGameBarEnabled' 0
 
-    # 6) Also remove the presence writer XblGameSave task
-    try { Unregister-ScheduledTask -TaskName 'XblGameSaveTask' -Confirm:$false -ErrorAction SilentlyContinue } catch { }
-    try { Unregister-ScheduledTask -TaskName 'XblGameSaveTaskLogon' -Confirm:$false -ErrorAction SilentlyContinue } catch { }
+    # NOTE: We do NOT touch GameBarPresenceWriter.exe or its IFEO key.
+    # The file stays in place, harmless, because the AppX that calls it is gone.
+    # This prevents the "Missing entry" error and HDMI blackouts some users experienced.
+
+    Write-Host '  Xbox Game Bar removed safely (no file tampering).' -ForegroundColor Gray
 }
 
 # ==================== END GAME BAR REMOVAL ====================
