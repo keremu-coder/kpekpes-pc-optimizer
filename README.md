@@ -11,7 +11,7 @@ A Windows 10/11 gaming optimizer with verified tweaks, low-latency network tunin
 - **100% Verified Tweaks** — Every change is read back and confirmed, not just applied.
 - **MMCSS & Network Tuning** — Disables network throttling, Nagle's Algorithm, and enables RSS.
 - **CPU & GPU Priority** — Gives games top scheduling priority and disables GPU power-saving.
-- **Xbox Game Bar Removed** — Fully uninstalls Game Bar, Game DVR, and blocks Windows Update from reinstalling it.
+- **Xbox Game Bar Removed** — Safely uninstalls the Game Bar app and blocks Windows Update from reinstalling it, without touching system files.
 - **Aggressive Low-End Mode** — Disables Windows Search, telemetry, and background services for budget PCs.
 - **Auto Re-Apply at Logon** — Survives Windows Updates.
 - **One-Click Revert** — Restores your PC from an automatic backup.
