@@ -16,7 +16,11 @@ A Windows 10/11 gaming optimizer with verified tweaks, low-latency network tunin
 - **Auto Re-Apply at Logon** — Survives Windows Updates.
 - **One-Click Revert** — Restores your PC from an automatic backup.
 - **Before → After Score** — See exactly how much was optimized.
-
+- Controller-safe CPU scheduling (no USB starvation on high-polling pads)
+- Single-CCD Ryzen (7600/7700) core parking check skipped (no false fail)
+- Full Xbox Game Bar removal via AppX + PresenceWriter disable
+- DS4Windows CPU + IO priority boost
+- Ricochet anti-cheat safe (VBS off, Secure Boot + TPM untouched)
 ---
 
 ## 🚀 How to Use
